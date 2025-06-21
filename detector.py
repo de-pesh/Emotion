@@ -1,18 +1,16 @@
-from transformers import pipeline
+import requests
+import os
 
-# Load model once at startup
-emotion_classifier = pipeline("sentiment-analysis")
+API_URL = "https://api-inference.huggingface.co/models/bhadresh-savani/distilbert-base-uncased-emotion"
+headers = {"Authorization": f"Bearer {os.getenv('HF_API_TOKEN')}"}
 
 def detect_emotion(text):
-    result = emotion_classifier(text)[0]
-    label = result['label']
-    score = result['score']
-    
-    if label == 'POSITIVE':
-        emotion = "Happy/Positive"
-    elif label == 'NEGATIVE':
-        emotion = "Sad/Negative"
-    else:
-        emotion = "Neutral"
-    
-    return {"emotion": emotion, "confidence": round(score, 2)}
+    payload = {"inputs": text}
+    response = requests.post(API_URL, headers=headers, json=payload)
+    result = response.json()
+
+    try:
+        top_result = result[0][0]
+        return {"emotion": top_result["label"], "confidence": round(top_result["score"], 2)}
+    except:
+        return {"emotion": "Error", "confidence": 0.0}
